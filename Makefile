@@ -3,7 +3,7 @@ CXXFLAGS ?= -std=c++17 -Wall -Wextra -pedantic -O2
 INCLUDES := -Iinclude
 BUILD_DIR := build
 
-LIB_SOURCES := src/fix_parser.cpp src/matching_engine.cpp src/order_book.cpp
+LIB_SOURCES := src/domain/order.cpp src/fix/fix_parser.cpp src/engine/matching_engine.cpp src/book/order_book.cpp
 APP_SOURCES := $(LIB_SOURCES) app/main.cpp
 TEST_SOURCES := $(LIB_SOURCES) tests/order_book_tests.cpp
 

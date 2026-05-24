@@ -4,7 +4,7 @@ This project is intentionally built in layers so you can explain it clearly in a
 
 ## 1. Start With The Trading Model
 
-The core domain objects are in `include/order.hpp`.
+The core domain objects are in `include/ome/domain/order.hpp`.
 
 We model:
 
@@ -17,7 +17,7 @@ Prices are stored as integer ticks instead of floating point values. This avoids
 
 ## 2. Build A Single-Symbol Order Book
 
-The matching rules live in `include/order_book.hpp` and `src/order_book.cpp`.
+The matching rules live in `include/ome/book/order_book.hpp` and `src/book/order_book.cpp`.
 
 The book keeps:
 
@@ -78,7 +78,20 @@ The engine handles two priority cases:
 
 This is useful to explain in interviews because priority handling is one of the details that separates a matching-engine project from a basic container exercise.
 
-## 6. Add Multi-Symbol Routing
+## 6. Keep Modules Separate
+
+The project is split by responsibility:
+
+- `ome/domain`: common domain objects and enum formatting
+- `ome/book`: one-symbol matching logic
+- `ome/fix`: FIX-like protocol parsing
+- `ome/engine`: multi-symbol routing and client order id state
+- `app`: CLI demo
+- `tests`: regression tests
+
+This makes the project easier to explain and extend. For example, a real QuickFIX adapter could be added beside `ome/fix` without changing the matching core.
+
+## 7. Add Multi-Symbol Routing
 
 `MatchingEngine` manages one `OrderBook` per symbol.
 
@@ -86,7 +99,7 @@ Each book has its own mutex. That means `AAPL` and `MSFT` orders can be submitte
 
 This is a simplified version of how real matching systems often partition work by instrument.
 
-## 7. Add FIX-Like Input
+## 8. Add FIX-Like Input
 
 `FixParser` accepts simple pipe-delimited messages:
 
@@ -110,7 +123,7 @@ Mapping:
 - `38`: quantity
 - `44`: price
 
-## 8. Add Tests
+## 9. Add Tests
 
 The tests in `tests/order_book_tests.cpp` cover:
 
@@ -128,7 +141,7 @@ Run:
 mingw32-make test
 ```
 
-## 9. Add A Demo
+## 10. Add A Demo
 
 The CLI app reads `samples/orders.fix`, submits each message, and prints:
 

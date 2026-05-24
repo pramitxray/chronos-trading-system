@@ -74,6 +74,13 @@ FIX-like input -> FixParser -> MatchingEngine -> OrderBook per symbol
                          ExecutionReport + Trade events
 ```
 
+The code is split into modules:
+
+- `ome/domain`: shared trading types such as orders, trades, reports, and snapshots
+- `ome/book`: deterministic single-symbol price-time-priority order book
+- `ome/fix`: FIX-like message parser for demo and gateway-style workflows
+- `ome/engine`: multi-symbol routing, client-order-id tracking, and book locking
+
 The `OrderBook` owns the matching rules for one symbol. `MatchingEngine` routes messages to the correct book and protects each book with a mutex, so independent symbols can be submitted concurrently.
 
 ## Resume Talking Points
