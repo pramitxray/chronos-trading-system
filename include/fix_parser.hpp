@@ -10,7 +10,8 @@ namespace ome {
 
 enum class FixMessageType {
     NewOrderSingle,
-    CancelRequest
+    CancelRequest,
+    AmendRequest
 };
 
 struct FixOrderMessage {

@@ -17,6 +17,7 @@ public:
     const std::string& symbol() const;
 
     SubmitResult submit(Order order);
+    SubmitResult amend(OrderId order_id, std::string new_client_order_id, Quantity new_quantity, Price new_price, std::uint64_t sequence);
     ExecutionReport cancel(OrderId order_id);
     BookSnapshot snapshot(std::size_t depth = 5) const;
 
@@ -36,6 +37,8 @@ private:
     void erase_best_if_empty(Side side);
     void add_resting_order(Order order);
     std::optional<Order> remove_order(OrderId order_id);
+    Order* find_order(OrderId order_id);
+    void match(Order& order, SubmitResult& result);
     ExecutionReport make_report(const Order& order, OrderStatus status, Quantity last_quantity, Price last_price, const std::string& text) const;
 
     std::string symbol_;

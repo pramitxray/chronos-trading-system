@@ -19,6 +19,7 @@ enum class OrderStatus {
     Accepted,
     PartiallyFilled,
     Filled,
+    Replaced,
     Canceled,
     Rejected
 };

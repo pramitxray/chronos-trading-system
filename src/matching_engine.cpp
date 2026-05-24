@@ -10,6 +10,9 @@ SubmitResult MatchingEngine::submit(const FixOrderMessage& message) {
         result.reports.push_back(cancel_by_client_order_id(message.original_client_order_id));
         return result;
     }
+    if (message.type == FixMessageType::AmendRequest) {
+        return amend_by_client_order_id(message);
+    }
 
     Order order;
     {
@@ -43,6 +46,93 @@ SubmitResult MatchingEngine::submit(const FixOrderMessage& message) {
     {
         std::lock_guard<std::mutex> book_lock(state.mutex);
         result = state.book.submit(order);
+    }
+
+    for (const auto& report : result.reports) {
+        if (report.status == OrderStatus::Filled || report.status == OrderStatus::Canceled) {
+            std::lock_guard<std::mutex> lock(engine_mutex_);
+            const auto client = order_to_client_id_.find(report.order_id);
+            if (client != order_to_client_id_.end()) {
+                client_to_order_id_.erase(client->second);
+                order_to_client_id_.erase(client);
+                order_to_symbol_.erase(report.order_id);
+            }
+        }
+    }
+
+    return result;
+}
+
+SubmitResult MatchingEngine::amend_by_client_order_id(const FixOrderMessage& message) {
+    SubmitResult result;
+    OrderId order_id = 0;
+    std::string symbol;
+    std::uint64_t sequence = 0;
+    {
+        std::lock_guard<std::mutex> lock(engine_mutex_);
+        const auto existing_new_id = client_to_order_id_.find(message.client_order_id);
+        if (existing_new_id != client_to_order_id_.end()) {
+            ExecutionReport report;
+            report.client_order_id = message.client_order_id;
+            report.symbol = message.symbol;
+            report.side = message.side;
+            report.status = OrderStatus::Rejected;
+            report.text = "duplicate replacement client order id";
+            result.reports.push_back(report);
+            return result;
+        }
+
+        const auto order_it = client_to_order_id_.find(message.original_client_order_id);
+        if (order_it == client_to_order_id_.end()) {
+            ExecutionReport report;
+            report.client_order_id = message.client_order_id;
+            report.symbol = message.symbol;
+            report.side = message.side;
+            report.status = OrderStatus::Rejected;
+            report.text = "unknown original client order id";
+            result.reports.push_back(report);
+            return result;
+        }
+
+        order_id = order_it->second;
+        const auto symbol_it = order_to_symbol_.find(order_id);
+        if (symbol_it != order_to_symbol_.end()) {
+            symbol = symbol_it->second;
+        }
+        sequence = next_sequence_++;
+    }
+
+    if (symbol.empty() || symbol != message.symbol) {
+        ExecutionReport report;
+        report.order_id = order_id;
+        report.client_order_id = message.client_order_id;
+        report.symbol = message.symbol;
+        report.side = message.side;
+        report.status = OrderStatus::Rejected;
+        report.text = "replacement symbol does not match original order";
+        result.reports.push_back(report);
+        return result;
+    }
+
+    auto& state = book_for(symbol);
+    {
+        std::lock_guard<std::mutex> book_lock(state.mutex);
+        result = state.book.amend(order_id, message.client_order_id, message.quantity, message.price, sequence);
+    }
+
+    bool replacement_accepted = false;
+    for (const auto& report : result.reports) {
+        if (report.status == OrderStatus::Replaced) {
+            replacement_accepted = true;
+            break;
+        }
+    }
+
+    if (replacement_accepted) {
+        std::lock_guard<std::mutex> lock(engine_mutex_);
+        client_to_order_id_.erase(message.original_client_order_id);
+        client_to_order_id_[message.client_order_id] = order_id;
+        order_to_client_id_[order_id] = message.client_order_id;
     }
 
     for (const auto& report : result.reports) {

@@ -13,6 +13,7 @@ class MatchingEngine {
 public:
     SubmitResult submit(const FixOrderMessage& message);
     ExecutionReport cancel_by_client_order_id(const std::string& client_order_id);
+    SubmitResult amend_by_client_order_id(const FixOrderMessage& message);
     BookSnapshot snapshot(const std::string& symbol, std::size_t depth = 5) const;
 
 private:

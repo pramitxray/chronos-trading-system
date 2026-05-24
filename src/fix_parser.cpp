@@ -30,6 +30,14 @@ std::optional<FixOrderMessage> FixParser::parse(const std::string& line, std::st
         } else if (type_it->second == "F") {
             message.type = FixMessageType::CancelRequest;
             message.original_client_order_id = fields.at("41");
+        } else if (type_it->second == "G") {
+            message.type = FixMessageType::AmendRequest;
+            message.client_order_id = fields.at("11");
+            message.original_client_order_id = fields.at("41");
+            message.symbol = fields.at("55");
+            message.side = fields.at("54") == "1" ? Side::Buy : Side::Sell;
+            message.quantity = static_cast<Quantity>(std::stoull(fields.at("38")));
+            message.price = static_cast<Price>(std::stoll(fields.at("44")));
         } else {
             error = "unsupported MsgType " + type_it->second;
             return std::nullopt;

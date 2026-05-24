@@ -63,7 +63,22 @@ Cancel flow uses the order id index.
 
 If the order is unknown, the engine returns a `REJECTED` report.
 
-## 5. Add Multi-Symbol Routing
+## 5. Add Amends
+
+Amend flow is based on FIX `35=G` OrderCancelReplaceRequest.
+
+```text
+35=G|11=new_id|41=old_id|55=AAPL|54=1|38=80|44=18150
+```
+
+The engine handles two priority cases:
+
+- Same price and reduced quantity: the order keeps FIFO priority.
+- Price change or quantity increase: the order loses priority and is re-entered as a fresh resting order.
+
+This is useful to explain in interviews because priority handling is one of the details that separates a matching-engine project from a basic container exercise.
+
+## 6. Add Multi-Symbol Routing
 
 `MatchingEngine` manages one `OrderBook` per symbol.
 
@@ -71,12 +86,13 @@ Each book has its own mutex. That means `AAPL` and `MSFT` orders can be submitte
 
 This is a simplified version of how real matching systems often partition work by instrument.
 
-## 6. Add FIX-Like Input
+## 7. Add FIX-Like Input
 
 `FixParser` accepts simple pipe-delimited messages:
 
 ```text
 35=D|11=1001|55=AAPL|54=1|38=100|44=18150
+35=G|11=1001R|41=1001|55=AAPL|54=1|38=80|44=18150
 35=F|41=1001
 ```
 
@@ -86,6 +102,7 @@ Mapping:
 
 - `35=D`: NewOrderSingle
 - `35=F`: OrderCancelRequest
+- `35=G`: OrderCancelReplaceRequest
 - `11`: client order id
 - `41`: original client order id for cancel
 - `55`: symbol
@@ -93,7 +110,7 @@ Mapping:
 - `38`: quantity
 - `44`: price
 
-## 7. Add Tests
+## 8. Add Tests
 
 The tests in `tests/order_book_tests.cpp` cover:
 
@@ -102,6 +119,7 @@ The tests in `tests/order_book_tests.cpp` cover:
 - Partial fills
 - FIFO priority at the same price
 - Cancel behavior
+- Amend behavior with priority preservation and priority reset
 - Multi-symbol routing
 
 Run:
@@ -110,7 +128,7 @@ Run:
 mingw32-make test
 ```
 
-## 8. Add A Demo
+## 9. Add A Demo
 
 The CLI app reads `samples/orders.fix`, submits each message, and prints:
 
@@ -129,14 +147,8 @@ build\matching_engine.exe samples\orders.fix
 
 Use this short version:
 
-> I built a C++17 matching engine that supports limit orders, price-time priority, partial fills, cancels, execution reports, and top-of-book snapshots. The matching core is deterministic per symbol, while the engine routes orders to per-symbol books protected by independent mutexes. I also added a FIX-like parser so the project connects directly to exchange gateway workflows I use at work.
+> I built a C++17 matching engine that supports limit orders, price-time priority, partial fills, cancels, amend/replace, execution reports, and top-of-book snapshots. The matching core is deterministic per symbol, while the engine routes orders to per-symbol books protected by independent mutexes. I also added a FIX-like parser so the project connects directly to exchange gateway workflows I use at work.
 
 ## Good Next Feature To Add
 
-The strongest next feature is order amend/replace:
-
-```text
-35=G|11=new_id|41=old_id|38=new_qty|44=new_px
-```
-
-That gives you a good interview discussion about preserving priority when quantity is reduced versus losing priority when price changes.
+The strongest next feature is an append-only event log for replaying order flow after restart. That gives you a good interview discussion about recovery, determinism, and production support.
