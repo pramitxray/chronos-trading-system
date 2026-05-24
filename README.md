@@ -2,7 +2,7 @@
 
 A C++17 limit order matching engine built as a resume project for exchange gateway and trading-system roles.
 
-The project is inspired by `zzsun777/cpp_multithreaded_order_matching_engine`, but modernized into a small, dependency-free codebase that is easy to build, test, explain, and extend.
+Inspired by `zzsun777/cpp_multithreaded_order_matching_engine`, with a smaller modern codebase, dependency-free build, tests, and interview-friendly documentation.
 
 ## Features
 
