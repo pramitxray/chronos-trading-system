@@ -1,0 +1,14 @@
+# AAPL book setup: two bids and one ask.
+35=D|11=1001|55=AAPL|54=1|38=100|44=18150
+35=D|11=1002|55=AAPL|54=1|38=50|44=18155
+35=D|11=1003|55=AAPL|54=2|38=70|44=18170
+
+# Aggressive sell partially fills the best bid first.
+35=D|11=1004|55=AAPL|54=2|38=70|44=18150
+
+# MSFT demonstrates independent per-symbol routing.
+35=D|11=2001|55=MSFT|54=2|38=100|44=42000
+35=D|11=2002|55=MSFT|54=1|38=40|44=42010
+
+# Cancel remaining AAPL buy order.
+35=F|41=1001
